@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.firebase/
+.env*
+!.env.example
+*debug.log
+firepit-log.txt
+*.tsbuildinfo
+test-results/
+.DS_Store
+/data/musicas.csv
+/firebase.json
