@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getRedirectResult, onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { collection, doc, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { ArrowDown, ArrowRight, Check, ChevronLeft, ChevronRight, Disc3, Headphones, Library, LoaderCircle, LogOut, Music2, Search, ShieldCheck, Shuffle, Sun, X } from 'lucide-react';
 import { auth, db, signIn } from './firebase';
@@ -42,7 +42,6 @@ export default function App() {
       return;
     }
     let stopAccess: (() => void) | undefined;
-    getRedirectResult(auth).catch(() => setError('O login não foi concluído. Tente entrar novamente.'));
     const stopAuth = onAuthStateChanged(auth, current => {
       stopAccess?.(); setUser(current); setSongs([]); setSelected(undefined); setError('');
       if (!current) { setSession('signed-out'); return; }
@@ -78,7 +77,8 @@ export default function App() {
   async function login() {
     setBusy(true); setError('');
     try { await signIn(); } catch (e) {
-      if ((e as {code?: string}).code !== 'auth/popup-closed-by-user') setError('Não foi possível entrar com o Google. Tente novamente no navegador.');
+      if ((e as {code?: string}).code === 'auth/popup-blocked') setError('O navegador bloqueou a janela do Google. Libere pop-ups para este site e tente novamente.');
+      else if ((e as {code?: string}).code !== 'auth/popup-closed-by-user') setError('Não foi possível entrar com o Google. Tente novamente no navegador.');
     } finally { setBusy(false); }
   }
   async function logout() {
