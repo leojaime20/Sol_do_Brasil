@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { collection, doc, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { ArrowDown, ArrowRight, Check, ChevronLeft, ChevronRight, Disc3, Headphones, Library, LoaderCircle, LogOut, Music2, Search, ShieldCheck, Shuffle, Sun, X } from 'lucide-react';
@@ -30,6 +30,7 @@ export default function App() {
   const [view, setView] = useState<View>('play');
   const [year, setYear] = useState(2000);
   const [selected, setSelected] = useState<Song>();
+  const lastSelectedIdByYear = useRef(new Map<number, string>());
   const [search, setSearch] = useState('');
   const [decade, setDecade] = useState<number | null>(null);
   const [notice, setNotice] = useState('');
@@ -70,8 +71,12 @@ export default function App() {
   useEffect(() => {
     if (!songs.length) return;
     if (!years.includes(year)) { setYear(years[0]); return; }
-    setSelected(previous => yearSongs.find(song => song.id === previous?.id) ?? yearSongs[0]);
+    setSelected(previous => yearSongs.find(song => song.id === previous?.id)
+      ?? randomSong(yearSongs, lastSelectedIdByYear.current.get(year)));
   }, [songs, yearSongs, year, years]);
+  useEffect(() => {
+    if (selected) lastSelectedIdByYear.current.set(selected.year, selected.id);
+  }, [selected]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 6000); return () => clearTimeout(timer); }, [notice]);
 
   async function login() {
@@ -85,6 +90,13 @@ export default function App() {
     try { await signOut(auth); setView('play'); } catch { setNotice('Não foi possível sair. Tente novamente.'); }
   }
   function choose(song: Song) { setYear(song.year); setSelected(song); setView('play'); window.scrollTo({top:0,behavior:'smooth'}); }
+  function selectYear(nextYear: number) {
+    const next = randomSong(filterSongs(songs, '', nextYear), lastSelectedIdByYear.current.get(nextYear));
+    if (!next) return;
+    lastSelectedIdByYear.current.set(nextYear, next.id);
+    setYear(nextYear);
+    setSelected(next);
+  }
   function shuffle(all = false) {
     const next = randomSong(all ? songs : yearSongs, selected?.id);
     if (next) { setYear(next.year); setSelected(next); setView('play'); }
@@ -114,7 +126,7 @@ export default function App() {
       <nav className="tabs" aria-label="Navegação principal"><button className={view === 'play' ? 'active' : ''} onClick={() => setView('play')}><Headphones size={18}/> Escolher um ano</button><button className={view === 'library' ? 'active' : ''} onClick={() => setView('library')}><Library size={18}/> Acervo</button><button className={view === 'help' ? 'active' : ''} onClick={() => setView('help')}><Music2 size={18}/> Como jogar</button></nav>
       {error && <div className="error-message" role="alert">{error}<button onClick={() => location.reload()}>Tentar novamente</button></div>}
       {loadingSongs ? <div className="empty-state" role="status"><LoaderCircle className="spin"/><h2>Afinando os instrumentos…</h2><p>Seu acervo está chegando.</p></div> : !songs.length && !error ? <div className="empty-state"><Disc3/><h2>A seleção está a caminho.</h2><p>O organizador ainda está preparando o acervo.</p></div> : view === 'play' ? <>
-        <section className="year-picker" aria-label="Selecionar ano"><div className="year-label"><span className="step-number">01</span><div><h2>Escolha o ano</h2><p>Cada época tem o seu som.</p></div></div><div className="year-controls"><button className="round-button" aria-label="Ano anterior disponível" onClick={() => setYear(years[years.indexOf(year)-1])} disabled={years.indexOf(year) <= 0}><ChevronLeft/></button><div className="year-select"><label htmlFor="year">ANO DO LANÇAMENTO</label><select id="year" value={year} onChange={event => setYear(Number(event.target.value))}>{years.map(item => <option key={item} value={item}>{item}</option>)}</select><ArrowDown size={16}/></div><button className="round-button" aria-label="Próximo ano disponível" onClick={() => setYear(years[years.indexOf(year)+1])} disabled={years.indexOf(year) === years.length-1}><ChevronRight/></button></div><button className="surprise-button" onClick={() => shuffle(true)}><Shuffle size={17}/> Me surpreenda</button></section>
+        <section className="year-picker" aria-label="Selecionar ano"><div className="year-label"><span className="step-number">01</span><div><h2>Escolha o ano</h2><p>Cada época tem o seu som.</p></div></div><div className="year-controls"><button className="round-button" aria-label="Ano anterior disponível" onClick={() => selectYear(years[years.indexOf(year)-1])} disabled={years.indexOf(year) <= 0}><ChevronLeft/></button><div className="year-select"><label htmlFor="year">ANO DO LANÇAMENTO</label><select id="year" value={year} onChange={event => selectYear(Number(event.target.value))}>{years.map(item => <option key={item} value={item}>{item}</option>)}</select><ArrowDown size={16}/></div><button className="round-button" aria-label="Próximo ano disponível" onClick={() => selectYear(years[years.indexOf(year)+1])} disabled={years.indexOf(year) === years.length-1}><ChevronRight/></button></div><button className="surprise-button" onClick={() => shuffle(true)}><Shuffle size={17}/> Me surpreenda</button></section>
         {selected && <section className="now-card" aria-label="Música selecionada"><div className="record-art"><div className="art-lines"/><span className="record-top">SOL DO BRASIL • SELEÇÃO MUSICAL</span><div className="sun-record"><div className="sun-record-core"><Music2 size={24}/><strong>{selected.year}</strong><span>ANO DO LANÇAMENTO</span></div></div><span className="record-bottom">UM ANO. MIL MEMÓRIAS.</span><span className="art-note one">♪</span><span className="art-note two">♫</span></div><div className="now-copy"><span className="card-label"><span className="green-dot"/> O SOM DA VEZ</span><h2>{selected.title}</h2><p className="artist">{selected.artist}</p><div className="track-meta"><span>{selected.year}</span><span>MÚSICA BRASILEIRA</span></div><a className="spotify-button" href={selected.spotifyUrl} target="_blank" rel="noopener noreferrer" onClick={() => setNotice('A faixa foi aberta no Spotify. Toque em reproduzir por lá.')}><Spotify/> Abrir no Spotify <ArrowRight size={19}/></a><button className="another-button" onClick={() => shuffle()} disabled={yearSongs.length < 2}><Shuffle size={17}/> Outra música de {year}</button><p className="playback-note">Abre a faixa no app ou no site do Spotify.</p></div></section>}
         <section className="year-tracks"><div className="section-heading"><div><span className="step-number">02</span><h2>Mais sons de {year}</h2></div><span>{yearSongs.length} {yearSongs.length === 1 ? 'música' : 'músicas'}</span></div><div className="song-list">{yearSongs.map((song,index) => <button key={song.id} className={`song-row ${selected?.id === song.id ? 'selected' : ''}`} onClick={() => setSelected(song)} aria-pressed={selected?.id === song.id}><span className="track-number">{selected?.id === song.id ? <span className="equalizer"><i/><i/><i/></span> : String(index+1).padStart(2,'0')}</span><span className="song-info"><b>{song.title}</b><span>{song.artist}</span></span><span className="row-year">{song.year}</span><span className="track-action">{selected?.id === song.id ? <Check size={17}/> : <ArrowRight size={17}/>}</span></button>)}</div></section>
         <div className="bottom-note"><Sun size={20}/><p>Não é só uma música. <strong>É uma época inteira.</strong></p><span>♪</span></div>

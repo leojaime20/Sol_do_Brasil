@@ -15,7 +15,7 @@ App móvel de música brasileira com React, TypeScript e Firebase. A identidade 
 
 ## Experiência
 
-Escolha um ano disponível, veja título, artista e ano original e abra a faixa no Spotify. Há sorteio dentro do ano, sorteio do catálogo inteiro, busca sem acentos, filtro por década e instruções para jogar em grupo. O manifesto permite abrir como app independente em navegadores compatíveis. O catálogo precisa de conexão; não há modo offline.
+Escolha um ano disponível para sortear uma faixa daquele período, veja título, artista e ano original e abra a faixa no Spotify. Ao voltar a um ano, o app evita repetir a última faixa exibida quando há outras opções. Há também sorteio do catálogo inteiro, busca sem acentos, filtro por década e instruções para jogar em grupo. O manifesto permite abrir como app independente em navegadores compatíveis. O catálogo precisa de conexão; não há modo offline.
 
 O link abre o Spotify, mas **não garante reprodução automática**. Para controlar o playback, é necessário cadastrar um aplicativo no Spotify Developers, usar OAuth PKCE, conceder o escopo `user-modify-playback-state` e ter uma conta Premium/dispositivo disponível. Esta versão usa os links fornecidos e não solicita credenciais Spotify. Referência: https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback
 
