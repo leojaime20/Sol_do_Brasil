@@ -15,9 +15,9 @@ App móvel de música brasileira com React, TypeScript e Firebase. A identidade 
 
 ## Experiência
 
-Escolha um ano disponível para sortear uma faixa daquele período, veja título, artista e ano original e abra a faixa no Spotify. Ao voltar a um ano, o app evita repetir a última faixa exibida quando há outras opções. Há também sorteio do catálogo inteiro, busca sem acentos, filtro por década e instruções para jogar em grupo. O manifesto permite abrir como app independente em navegadores compatíveis. O catálogo precisa de conexão; não há modo offline.
+Após entrar, escolha entre **Brasileiras** (padrão), **Internacionais** e **Mix**. O botão no cabeçalho permite trocar o catálogo durante a visita. Escolha um ano disponível para sortear uma faixa, veja título e artista e abra a faixa ou a busca no Spotify. Ao voltar a um ano, o app evita repetir a última faixa exibida quando há outras opções. Há também sorteio do catálogo selecionado, busca sem acentos, filtro por década e instruções para jogar em grupo. O manifesto permite abrir como app independente em navegadores compatíveis. O catálogo brasileiro precisa de conexão; não há modo offline.
 
-O link abre o Spotify, mas **não garante reprodução automática**. Para controlar o playback, é necessário cadastrar um aplicativo no Spotify Developers, usar OAuth PKCE, conceder o escopo `user-modify-playback-state` e ter uma conta Premium/dispositivo disponível. Esta versão usa os links fornecidos e não solicita credenciais Spotify. Referência: https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback
+Os links brasileiros abrem a faixa informada no CSV. As músicas internacionais abrem uma busca por artista e título no Spotify, pois as listas consultadas não fornecem IDs de gravações verificadas. O usuário escolhe a versão desejada. O link **não garante reprodução automática**. Para controlar o playback, é necessário cadastrar um aplicativo no Spotify Developers, usar OAuth PKCE, conceder o escopo `user-modify-playback-state` e ter uma conta Premium/dispositivo disponível. Esta versão não solicita credenciais Spotify. Referência: https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback
 
 ## Liberar ou revogar convidados
 
@@ -40,14 +40,16 @@ No console, crie `allowedUsers/<email-em-minúsculas>` com `enabled: true` (bool
 - `catalog/summary`: contagem, anos disponíveis, fonte e data de importação.
 - `allowedUsers/<email>`: `enabled`, `email`, `updatedAt`.
 
-O arquivo original local está em `data/musicas.csv` e não é enviado ao repositório público nem aos arquivos do Pages. Os 427 registros já foram importados no Firestore, inclusive os IDs não sequenciais, nomes e anos originais. As entradas 400 e 431 apontam para a mesma faixa de “Leão”, com anos 2020 e 2022; nenhuma correção foi inventada.
+O arquivo original local está em `data/musicas.csv` e não é enviado ao repositório público nem aos arquivos do Pages. Os 506 registros estão importados no Firestore, inclusive os IDs não sequenciais, nomes e anos originais. Há pelo menos quatro músicas por ano de 1960 a 2026. A entrada 400 mantém a gravação original de “Leão”, de Xamã com Marília Mendonça, lançada em 2020.
+
+O catálogo internacional está em `src/international-catalog.json`: **335 seleções, cinco por ano de 1960 a 2026**. Para 1960–2025, a curadoria partiu dos [rankings anuais Top40Charts.net](https://www.top40charts.net/), removendo faixas repetidas em outras listas do arquivo e corrigindo grafias evidentes. Para 2026, ainda em curso, foram usados cinco destaques da [lista parcial da Official Charts](https://www.officialcharts.com/chart-news/official-biggest-songs-of-2026/). Cada registro inclui a URL da lista e a posição. No internacional, `year` significa **ano do ranking**, que pode ser diferente do lançamento original; no brasileiro, continua sendo o ano do lançamento. O mix reúne os dois conjuntos sem alterar os dados brasileiros. O catálogo internacional é público e vai junto com o JavaScript do site; o brasileiro continua servido pelo Firestore após a autorização.
 
 ```sh
 npm run catalog:validate
 npm run catalog:import
 ```
 
-A importação valida IDs, campos obrigatórios, anos e URLs Spotify. É um upsert por ID: reexecutar não duplica músicas. Ela **não apaga** registros removidos de versões futuras do CSV; exclusões devem ser revisadas à parte. O CSV não é publicado em `dist/` e o catálogo não está embutido no JavaScript de produção.
+A importação valida IDs, campos obrigatórios, anos e URLs Spotify do acervo brasileiro. É um upsert por ID: reexecutar não duplica músicas. Ela **não apaga** registros removidos de versões futuras do CSV; exclusões devem ser revisadas à parte. O CSV brasileiro não é publicado em `dist/` nem embutido no JavaScript de produção.
 
 ## Desenvolvimento e verificações
 

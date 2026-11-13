@@ -1,4 +1,10 @@
-export type Song = { id: string; title: string; artist: string; year: number; spotifyUrl: string };
+export type Song = { id: string; title: string; artist: string; year: number; spotifyUrl: string; origin?: 'brazilian' | 'international'; sourceUrl?: string; sourceRank?: string | number };
+export type Catalog = 'brazilian' | 'international' | 'mix';
+export function songsForCatalog(brazilian: Song[], international: Song[], catalog: Catalog): Song[] {
+  if (catalog === 'brazilian') return brazilian;
+  if (catalog === 'international') return international;
+  return [...brazilian, ...international].sort((a, b) => a.year - b.year || a.title.localeCompare(b.title, 'pt-BR'));
+}
 export function normalize(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
 }
@@ -18,5 +24,7 @@ export function validSong(value: unknown): value is Song {
   return typeof song.id === 'string' && typeof song.title === 'string' && song.title.length > 0
     && typeof song.artist === 'string' && song.artist.length > 0
     && Number.isInteger(song.year) && song.year >= 1900 && song.year <= 2100
-    && typeof song.spotifyUrl === 'string' && /^https:\/\/open\.spotify\.com\/track\/[A-Za-z0-9]{22}$/.test(song.spotifyUrl);
+    && typeof song.spotifyUrl === 'string' && /^https:\/\/open\.spotify\.com\/(?:track\/[A-Za-z0-9]{22}|search\/[A-Za-z0-9%._~!$&'()*+,;=:@-]+)$/.test(song.spotifyUrl)
+    && (song.origin === undefined || song.origin === 'brazilian' || song.origin === 'international')
+    && (song.sourceUrl === undefined || (typeof song.sourceUrl === 'string' && /^https:\/\/(?:www\.top40charts\.net|www\.officialcharts\.com)\//.test(song.sourceUrl)));
 }
